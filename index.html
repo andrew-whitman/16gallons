@@ -7,35 +7,71 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="container">
-      <header class="header">
-        <div class="title-group">
-          <h1>16gallons</h1>
-          <p class="subtitle">Merge volumes. Reach 16 gallons.</p>
+    <div class="app">
+      <aside id="sidebar" class="sidebar" aria-label="Volume conversion guide">
+        <div class="sidebar-header">
+          <h2 class="sidebar-title">Volume Guide</h2>
+          <button
+            id="sidebar-close"
+            class="sidebar-close"
+            type="button"
+            aria-label="Close volume guide"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
-        <div class="scores">
-          <div class="score-box">
-            <span class="score-label">Score</span>
-            <span id="score" class="score-value">0</span>
-          </div>
-          <div class="score-box">
-            <span class="score-label">Best</span>
-            <span id="best-score" class="score-value">0</span>
-          </div>
-        </div>
-      </header>
+        <p class="sidebar-intro">
+          Each tile value maps to a kitchen volume. Merge matching tiles to
+          double the amount.
+        </p>
+        <ol id="conversion-list" class="conversion-list"></ol>
+      </aside>
 
-      <div class="controls">
-        <button id="new-game" type="button">New Game</button>
-        <p class="hint">Use arrow keys or swipe to slide tiles.</p>
-      </div>
+      <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
 
-      <div class="board-wrapper">
-        <div id="board" class="board" aria-label="Game board"></div>
-        <div id="overlay" class="overlay hidden" aria-hidden="true">
-          <div class="overlay-content">
-            <p id="overlay-message"></p>
-            <button id="overlay-action" type="button"></button>
+      <div class="app-main">
+        <button
+          id="sidebar-open"
+          class="sidebar-open"
+          type="button"
+          aria-expanded="false"
+          aria-controls="sidebar"
+        >
+          <span class="sidebar-open-icon" aria-hidden="true"></span>
+          <span class="sidebar-open-label">Guide</span>
+        </button>
+
+        <div class="container">
+          <header class="header">
+            <div class="title-group">
+              <h1>16gallons</h1>
+              <p class="subtitle">Merge volumes. Reach 16 gallons.</p>
+            </div>
+            <div class="scores">
+              <div class="score-box">
+                <span class="score-label">Score</span>
+                <span id="score" class="score-value">0</span>
+              </div>
+              <div class="score-box">
+                <span class="score-label">Best</span>
+                <span id="best-score" class="score-value">0</span>
+              </div>
+            </div>
+          </header>
+
+          <div class="controls">
+            <button id="new-game" type="button">New Game</button>
+            <p class="hint">Use arrow keys or swipe to slide tiles.</p>
+          </div>
+
+          <div class="board-wrapper">
+            <div id="board" class="board" aria-label="Game board"></div>
+            <div id="overlay" class="overlay hidden" aria-hidden="true">
+              <div class="overlay-content">
+                <p id="overlay-message"></p>
+                <button id="overlay-action" type="button"></button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

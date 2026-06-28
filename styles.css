@@ -13,6 +13,10 @@
   --button-bg: #8f7a66;
   --button-hover: #9f8a76;
   --overlay-bg: rgba(238, 228, 218, 0.75);
+  --sidebar-width: 280px;
+  --sidebar-bg: #f3ece2;
+  --sidebar-border: rgba(74, 68, 56, 0.12);
+  --shadow: 0 12px 32px rgba(74, 68, 56, 0.12);
 }
 
 body {
@@ -21,6 +25,174 @@ body {
   font-family: "Avenir Next", "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--text);
+}
+
+body.sidebar-visible {
+  overflow: hidden;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 20px 32px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  overflow-y: auto;
+  transition: transform 220ms ease, margin 220ms ease;
+  z-index: 30;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sidebar-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.sidebar-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  background: rgba(143, 122, 102, 0.12);
+  color: var(--text);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.sidebar-close:hover {
+  background: rgba(143, 122, 102, 0.2);
+}
+
+.sidebar-intro {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.conversion-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.conversion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(74, 68, 56, 0.06);
+}
+
+.conversion-swatch {
+  flex-shrink: 0;
+  display: block;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(74, 68, 56, 0.08);
+}
+
+.conversion-content {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+  min-width: 0;
+}
+
+.conversion-tile {
+  grid-row: 1 / span 2;
+  min-width: 2.4rem;
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.conversion-arrow {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.conversion-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.conversion-oz {
+  grid-column: 2 / span 2;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(74, 68, 56, 0.35);
+  z-index: 20;
+}
+
+.sidebar-open {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 15;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: var(--button-bg);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+
+.sidebar-open-icon {
+  width: 14px;
+  height: 12px;
+  border-top: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  background: linear-gradient(currentColor, currentColor) center / 100% 2px
+    no-repeat;
+}
+
+.sidebar-open-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .container {
@@ -275,6 +447,49 @@ button:hover {
   margin: 0 0 14px;
   font-size: 1.6rem;
   font-weight: 700;
+}
+
+@media (max-width: 899px) {
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    height: 100%;
+    max-width: min(var(--sidebar-width), 88vw);
+    transform: translateX(-105%);
+    box-shadow: var(--shadow);
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+  }
+
+  .sidebar-open {
+    display: inline-flex;
+  }
+
+  .app-main .container {
+    padding-top: 68px;
+  }
+}
+
+@media (min-width: 900px) {
+  .sidebar-backdrop {
+    display: none !important;
+  }
+
+  .sidebar-open {
+    display: none;
+  }
+
+  .app--sidebar-collapsed .sidebar {
+    margin-left: calc(-1 * var(--sidebar-width));
+    transform: translateX(-8px);
+    pointer-events: none;
+  }
+
+  .app--sidebar-collapsed .sidebar-open {
+    display: inline-flex;
+  }
 }
 
 @media (max-width: 480px) {

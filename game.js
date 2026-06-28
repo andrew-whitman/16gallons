@@ -27,6 +27,13 @@ const newGameBtn = document.getElementById("new-game");
 const overlayEl = document.getElementById("overlay");
 const overlayMessageEl = document.getElementById("overlay-message");
 const overlayActionBtn = document.getElementById("overlay-action");
+const sidebarEl = document.getElementById("sidebar");
+const sidebarOpenBtn = document.getElementById("sidebar-open");
+const sidebarCloseBtn = document.getElementById("sidebar-close");
+const sidebarBackdropEl = document.getElementById("sidebar-backdrop");
+const conversionListEl = document.getElementById("conversion-list");
+
+let appEl;
 
 let grid = createEmptyGrid();
 let tiles = [];
@@ -39,6 +46,8 @@ let touchStart = null;
 bestScoreEl.textContent = String(bestScore);
 
 initBoardCells();
+renderConversionGuide();
+initSidebar();
 startGame();
 bindEvents();
 
@@ -72,6 +81,9 @@ function startGame() {
 function bindEvents() {
   newGameBtn.addEventListener("click", startGame);
   overlayActionBtn.addEventListener("click", handleOverlayAction);
+  sidebarOpenBtn.addEventListener("click", openSidebar);
+  sidebarCloseBtn.addEventListener("click", closeSidebar);
+  sidebarBackdropEl.addEventListener("click", closeSidebar);
   window.addEventListener("keydown", handleKeydown, { passive: false });
 
   boardEl.addEventListener(
@@ -114,6 +126,17 @@ function bindEvents() {
 }
 
 function handleKeydown(event) {
+  if (event.key === "Escape") {
+    const sidebarVisible = isDesktopSidebar()
+      ? !appEl.classList.contains("app--sidebar-collapsed")
+      : sidebarEl.classList.contains("sidebar--open");
+
+    if (sidebarVisible) {
+      closeSidebar();
+      return;
+    }
+  }
+
   const keyMap = {
     ArrowUp: "up",
     ArrowDown: "down",
@@ -126,6 +149,112 @@ function handleKeydown(event) {
 
   event.preventDefault();
   move(direction);
+}
+
+function renderConversionGuide() {
+  conversionListEl.innerHTML = "";
+
+  Object.entries(VOLUME_LABELS).forEach(([value, label]) => {
+    const numericValue = Number(value);
+    const item = document.createElement("li");
+    item.className = "conversion-item";
+
+    const swatch = document.createElement("span");
+    swatch.className = `conversion-swatch tile--${value}`;
+    swatch.setAttribute("aria-hidden", "true");
+
+    const content = document.createElement("div");
+    content.className = "conversion-content";
+
+    const tileValue = document.createElement("span");
+    tileValue.className = "conversion-tile";
+    tileValue.textContent = String(numericValue);
+
+    const arrow = document.createElement("span");
+    arrow.className = "conversion-arrow";
+    arrow.setAttribute("aria-hidden", "true");
+    arrow.textContent = "→";
+
+    const volumeLabel = document.createElement("span");
+    volumeLabel.className = "conversion-label";
+    volumeLabel.textContent = label;
+
+    const flOz = document.createElement("span");
+    flOz.className = "conversion-oz";
+    flOz.textContent = formatFlOz(numericValue);
+
+    content.append(tileValue, arrow, volumeLabel, flOz);
+    item.append(swatch, content);
+    conversionListEl.appendChild(item);
+  });
+}
+
+function formatFlOz(value) {
+  if (value < 16) {
+    const tablespoons = value;
+    const ounces = tablespoons * 0.5;
+    return ounces === 1 ? "1 fl oz" : `${ounces} fl oz`;
+  }
+
+  if (Number.isInteger(value / 128)) {
+    const gallons = value / 128;
+    return gallons === 1 ? "128 fl oz" : `${value} fl oz`;
+  }
+
+  return `${value} fl oz`;
+}
+
+function openSidebar() {
+  if (isDesktopSidebar()) {
+    sidebarEl.classList.remove("sidebar--collapsed");
+    appEl.classList.remove("app--sidebar-collapsed");
+  } else {
+    sidebarEl.classList.add("sidebar--open");
+    sidebarBackdropEl.hidden = false;
+    document.body.classList.add("sidebar-visible");
+  }
+
+  sidebarOpenBtn.setAttribute("aria-expanded", "true");
+}
+
+function closeSidebar() {
+  if (isDesktopSidebar()) {
+    sidebarEl.classList.add("sidebar--collapsed");
+    appEl.classList.add("app--sidebar-collapsed");
+  } else {
+    sidebarEl.classList.remove("sidebar--open");
+    sidebarBackdropEl.hidden = true;
+    document.body.classList.remove("sidebar-visible");
+  }
+
+  sidebarOpenBtn.setAttribute("aria-expanded", "false");
+}
+
+function initSidebar() {
+  appEl = document.querySelector(".app");
+
+  if (isDesktopSidebar()) {
+    sidebarOpenBtn.setAttribute("aria-expanded", "true");
+  }
+
+  window
+    .matchMedia("(min-width: 900px)")
+    .addEventListener("change", handleSidebarBreakpoint);
+}
+
+function handleSidebarBreakpoint(event) {
+  sidebarEl.classList.remove("sidebar--open", "sidebar--collapsed");
+  appEl.classList.remove("app--sidebar-collapsed");
+  sidebarBackdropEl.hidden = true;
+  document.body.classList.remove("sidebar-visible");
+  sidebarOpenBtn.setAttribute(
+    "aria-expanded",
+    event.matches ? "true" : "false",
+  );
+}
+
+function isDesktopSidebar() {
+  return window.matchMedia("(min-width: 900px)").matches;
 }
 
 function handleOverlayAction() {
