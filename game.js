@@ -4,9 +4,10 @@ const BEST_SCORE_KEY = "16gallons-best-score";
 const THEME_KEY = "16gallons-theme";
 
 const VOLUME_LABELS = {
-  2: "2 tbsp",
-  4: "4 tbsp",
-  8: "8 tbsp",
+  1: "1 fl oz",
+  2: "4 tbsp",
+  4: "1/2 cup",
+  8: "1 cup",
   16: "1 pint",
   32: "1 quart",
   64: "1/2 gallon",
@@ -286,15 +287,6 @@ function renderConversionGuide() {
     const content = document.createElement("div");
     content.className = "conversion-content";
 
-    const tileValue = document.createElement("span");
-    tileValue.className = "conversion-tile";
-    tileValue.textContent = String(numericValue);
-
-    const arrow = document.createElement("span");
-    arrow.className = "conversion-arrow";
-    arrow.setAttribute("aria-hidden", "true");
-    arrow.textContent = "→";
-
     const volumeLabelEl = document.createElement("span");
     volumeLabelEl.className = "conversion-label";
     volumeLabelEl.textContent = label;
@@ -303,25 +295,18 @@ function renderConversionGuide() {
     flOz.className = "conversion-oz";
     flOz.textContent = formatFlOz(numericValue);
 
-    content.append(tileValue, arrow, volumeLabelEl, flOz);
+    content.append(volumeLabelEl, flOz);
     item.append(swatch, content);
+    item.setAttribute(
+      "aria-label",
+      `${label}, ${formatFlOz(numericValue)}`,
+    );
     conversionListEl.appendChild(item);
   });
 }
 
 function formatFlOz(value) {
-  if (value < 16) {
-    const tablespoons = value;
-    const ounces = tablespoons * 0.5;
-    return ounces === 1 ? "1 fl oz" : `${ounces} fl oz`;
-  }
-
-  if (Number.isInteger(value / 128)) {
-    const gallons = value / 128;
-    return gallons === 1 ? "128 fl oz" : `${value} fl oz`;
-  }
-
-  return `${value} fl oz`;
+  return value === 1 ? "1 fl oz" : `${value} fl oz`;
 }
 
 function openSidebar() {
@@ -549,7 +534,7 @@ function spawnTile() {
   if (emptyCells.length === 0) return;
 
   const { row, col } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-  const value = Math.random() < 0.9 ? 2 : 4;
+  const value = Math.random() < 0.9 ? 1 : 2;
   const tile = {
     id: crypto.randomUUID(),
     value,
@@ -618,9 +603,9 @@ function volumeLabel(value) {
 }
 
 function waterFillPercent(maxTile) {
-  if (maxTile < 2) return 0;
+  if (maxTile < 1) return 0;
 
-  const minLog = Math.log2(2);
+  const minLog = Math.log2(1);
   const maxLog = Math.log2(WIN_VALUE);
   const tileLog = Math.log2(maxTile);
 
