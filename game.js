@@ -617,6 +617,26 @@ function updateWaterLevel() {
   waterEl.style.setProperty("--water-height", `${waterFillPercent(maxTile)}%`);
 }
 
+function updateTileContent(element, value) {
+  let label = element.querySelector(".tile__label");
+  let oz = element.querySelector(".tile__oz");
+
+  if (!label) {
+    label = document.createElement("span");
+    label.className = "tile__label";
+    oz = document.createElement("span");
+    oz.className = "tile__oz";
+    element.replaceChildren(label, oz);
+  }
+
+  const kitchenLabel = volumeLabel(value);
+  const flOzLabel = formatFlOz(value);
+
+  label.textContent = kitchenLabel;
+  oz.textContent = flOzLabel;
+  element.setAttribute("aria-label", `${kitchenLabel}, ${flOzLabel}`);
+}
+
 function render() {
   const boardRect = boardEl.getBoundingClientRect();
   const gap = 12;
@@ -648,7 +668,7 @@ function render() {
     }
 
     element.className = `tile tile--${tile.value}`;
-    element.textContent = volumeLabel(tile.value);
+    updateTileContent(element, tile.value);
 
     if (tile.isNew) element.classList.add("tile--new");
     if (tile.mergedFrom) element.classList.add("tile--merged");
