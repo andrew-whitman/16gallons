@@ -40,11 +40,49 @@
   --water-mid: rgba(46, 122, 154, 0.78);
   --water-deep: rgba(22, 88, 118, 0.9);
 
-  /* Tile ramp — each step drops ~12% lightness; hue drifts cyan → teal → blue */
-  --tile-text-dark: var(--ink);
-  --tile-text-light: var(--on-primary);
+  /* Tile text — fixed contrast against tile backgrounds in both themes */
+  --tile-text-dark: #102a36;
+  --tile-text-light: #f6fbfd;
   --tile-edge-light: rgba(16, 42, 54, 0.16);
   --tile-edge-dark: rgba(255, 255, 255, 0.18);
+  --gradient-end: #d4e8ef;
+  --surface-overlay: rgba(255, 255, 255, 0.62);
+  --surface-overlay-border: rgba(16, 42, 54, 0.1);
+  --backdrop: rgba(16, 42, 54, 0.45);
+  --sidebar-close-bg: rgba(18, 79, 99, 0.12);
+  --sidebar-close-bg-hover: rgba(18, 79, 99, 0.2);
+  --score-label: rgba(246, 251, 253, 0.88);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --ink: #e5f2f7;
+  --ink-muted: #8baab6;
+  --surface: #0f232c;
+  --surface-raised: #162d38;
+  --surface-sidebar: #132830;
+  --primary: #3d96a8;
+  --primary-hover: #4fadc0;
+  --on-primary: #041820;
+  --board-bg: #1c3d4b;
+  --cell-bg: rgba(255, 255, 255, 0.07);
+  --cell-border: rgba(255, 255, 255, 0.12);
+  --overlay-bg: rgba(12, 28, 36, 0.93);
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --focus-ring: 0 0 0 3px var(--surface-raised), 0 0 0 5px #8ec8dc;
+  --water-shallow: rgba(70, 150, 185, 0.55);
+  --water-mid: rgba(45, 115, 150, 0.75);
+  --water-deep: rgba(25, 75, 105, 0.92);
+  --tile-edge-light: rgba(16, 42, 54, 0.2);
+  --gradient-end: #0a1920;
+  --surface-overlay: rgba(255, 255, 255, 0.06);
+  --surface-overlay-border: rgba(255, 255, 255, 0.1);
+  --backdrop: rgba(0, 0, 0, 0.55);
+  --sidebar-close-bg: rgba(255, 255, 255, 0.08);
+  --sidebar-close-bg-hover: rgba(255, 255, 255, 0.14);
+  --score-label: rgba(4, 24, 32, 0.78);
+  color-scheme: dark;
 }
 
 body {
@@ -55,7 +93,7 @@ body {
     180deg,
     var(--surface-raised) 0%,
     var(--surface) 48%,
-    #d4e8ef 100%
+    var(--gradient-end) 100%
   );
   color: var(--text);
 }
@@ -111,14 +149,14 @@ body.sidebar-visible {
   height: 34px;
   padding: 0;
   border-radius: 8px;
-  background: rgba(18, 79, 99, 0.12);
+  background: var(--sidebar-close-bg);
   color: var(--text);
   font-size: 1.4rem;
   line-height: 1;
 }
 
 .sidebar-close:hover {
-  background: rgba(18, 79, 99, 0.2);
+  background: var(--sidebar-close-bg-hover);
 }
 
 .sidebar-intro {
@@ -143,8 +181,8 @@ body.sidebar-visible {
   gap: 12px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(16, 42, 54, 0.1);
+  background: var(--surface-overlay);
+  border: 1px solid var(--surface-overlay-border);
 }
 
 .conversion-swatch {
@@ -193,7 +231,7 @@ body.sidebar-visible {
 .sidebar-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(16, 42, 54, 0.45);
+  background: var(--backdrop);
   z-index: 20;
 }
 
@@ -255,6 +293,39 @@ body.sidebar-visible {
   font-size: 0.95rem;
 }
 
+.header-tools {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  flex-shrink: 0;
+  background: var(--surface-raised);
+  color: var(--text);
+  border: 1px solid var(--sidebar-border);
+}
+
+.theme-toggle:hover {
+  background: var(--surface-overlay);
+}
+
+.theme-toggle-icon::before {
+  content: "☾";
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+[data-theme="dark"] .theme-toggle-icon::before {
+  content: "☀";
+}
+
 .scores {
   display: flex;
   gap: 10px;
@@ -274,7 +345,7 @@ body.sidebar-visible {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(246, 251, 253, 0.88);
+  color: var(--score-label);
 }
 
 .score-value {
@@ -309,7 +380,8 @@ button:hover {
 
 button:focus-visible,
 .sidebar-close:focus-visible,
-.sidebar-open:focus-visible {
+.sidebar-open:focus-visible,
+.theme-toggle:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
 }
@@ -417,69 +489,81 @@ button:focus-visible,
   }
 }
 
+/* Light tiles — dark ink text (all pass WCAG AA) */
 .tile--2 {
-  background: #dff5fc;
-  color: #2d6278;
+  background: #d2edf6;
+  color: var(--tile-text-dark);
   font-size: clamp(0.95rem, 3.8vw, 1.2rem);
 }
 
 .tile--4 {
-  background: #c5ebf7;
-  color: #2d6278;
+  background: #b5e0ef;
+  color: var(--tile-text-dark);
   font-size: clamp(0.95rem, 3.8vw, 1.2rem);
 }
 
 .tile--8 {
-  background: #9edcf0;
-  color: #1f4f63;
+  background: #8ecce3;
+  color: var(--tile-text-dark);
   font-size: clamp(0.9rem, 3.5vw, 1.1rem);
 }
 
 .tile--16 {
-  background: #6fc8e6;
-  color: #f4fbff;
+  background: #62b3cf;
+  color: var(--tile-text-dark);
   font-size: clamp(0.88rem, 3.2vw, 1.05rem);
 }
 
+/* Mid tiles — switch to light text as backgrounds deepen */
 .tile--32 {
-  background: #4eb3d8;
-  color: #f4fbff;
+  background: #277d98;
+  color: var(--tile-text-light);
+  box-shadow: inset 0 0 0 1px var(--tile-edge-dark);
   font-size: clamp(0.85rem, 3vw, 1rem);
 }
 
 .tile--64 {
-  background: #3a9cc4;
-  color: #f4fbff;
+  background: #1f758f;
+  color: var(--tile-text-light);
+  box-shadow: inset 0 0 0 1px var(--tile-edge-dark);
   font-size: clamp(0.82rem, 2.8vw, 0.98rem);
 }
 
 .tile--128 {
-  background: #2d88b0;
-  color: #f4fbff;
+  background: #176377;
+  color: var(--tile-text-light);
+  box-shadow: inset 0 0 0 1px var(--tile-edge-dark);
   font-size: clamp(0.8rem, 2.6vw, 0.95rem);
 }
 
 .tile--256 {
-  background: #247596;
-  color: #f4fbff;
+  background: #115263;
+  color: var(--tile-text-light);
+  box-shadow: inset 0 0 0 1px var(--tile-edge-dark);
   font-size: clamp(0.78rem, 2.4vw, 0.92rem);
 }
 
 .tile--512 {
-  background: #1c647f;
-  color: #f4fbff;
+  background: #0c4452;
+  color: var(--tile-text-light);
+  box-shadow: inset 0 0 0 1px var(--tile-edge-dark);
   font-size: clamp(0.76rem, 2.2vw, 0.9rem);
 }
 
 .tile--1024 {
-  background: #155368;
-  color: #f4fbff;
+  background: #083744;
+  color: var(--tile-text-light);
+  box-shadow: inset 0 0 0 1px var(--tile-edge-dark);
   font-size: clamp(0.72rem, 2vw, 0.86rem);
 }
 
+/* Win tile — deep ocean with warm sand accent (split-complementary) */
 .tile--2048 {
-  background: #0e4258;
-  color: #e8f6fc;
+  background: #062e3a;
+  color: var(--tile-text-light);
+  box-shadow:
+    inset 0 0 0 1px var(--tile-edge-dark),
+    inset 0 0 0 3px rgba(196, 165, 116, 0.55);
   font-size: clamp(0.7rem, 1.8vw, 0.84rem);
 }
 
@@ -487,8 +571,9 @@ button:focus-visible,
 .tile--8192,
 .tile--16384,
 .tile--32768 {
-  background: #082e3e;
-  color: #e8f6fc;
+  background: #041f27;
+  color: var(--tile-text-light);
+  box-shadow: inset 0 0 0 1px var(--tile-edge-dark);
   font-size: clamp(0.68rem, 1.6vw, 0.8rem);
 }
 
@@ -515,6 +600,18 @@ button:focus-visible,
   margin: 0 0 14px;
   font-size: 1.6rem;
   font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .water {
+    transition: none;
+  }
+
+  .tile--new,
+  .tile--merged {
+    animation: none;
+  }
 }
 
 @media (max-width: 899px) {
@@ -563,6 +660,11 @@ button:focus-visible,
 @media (max-width: 480px) {
   .header {
     flex-direction: column;
+  }
+
+  .header-tools {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .controls {

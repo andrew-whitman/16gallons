@@ -1,6 +1,7 @@
 const SIZE = 4;
 const WIN_VALUE = 2048;
 const BEST_SCORE_KEY = "16gallons-best-score";
+const THEME_KEY = "16gallons-theme";
 
 const VOLUME_LABELS = {
   2: "2 tbsp",
@@ -32,6 +33,7 @@ const sidebarOpenBtn = document.getElementById("sidebar-open");
 const sidebarCloseBtn = document.getElementById("sidebar-close");
 const sidebarBackdropEl = document.getElementById("sidebar-backdrop");
 const conversionListEl = document.getElementById("conversion-list");
+const themeToggleBtn = document.getElementById("theme-toggle");
 
 let waterEl;
 
@@ -48,6 +50,7 @@ let touchStart = null;
 
 bestScoreEl.textContent = String(bestScore);
 
+initTheme();
 initBoardCells();
 renderConversionGuide();
 initSidebar();
@@ -56,6 +59,33 @@ bindEvents();
 
 function createEmptyGrid() {
   return Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+}
+
+function initTheme() {
+  updateThemeToggle(getTheme());
+}
+
+function getTheme() {
+  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+}
+
+function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem(THEME_KEY, theme);
+  updateThemeToggle(theme);
+}
+
+function toggleTheme() {
+  setTheme(getTheme() === "dark" ? "light" : "dark");
+}
+
+function updateThemeToggle(theme) {
+  const isDark = theme === "dark";
+  themeToggleBtn.setAttribute("aria-pressed", String(isDark));
+  themeToggleBtn.setAttribute(
+    "aria-label",
+    isDark ? "Switch to light theme" : "Switch to dark theme",
+  );
 }
 
 function initBoardCells() {
@@ -93,6 +123,7 @@ function startGame() {
 function bindEvents() {
   newGameBtn.addEventListener("click", startGame);
   overlayActionBtn.addEventListener("click", handleOverlayAction);
+  themeToggleBtn.addEventListener("click", toggleTheme);
   sidebarOpenBtn.addEventListener("click", openSidebar);
   sidebarCloseBtn.addEventListener("click", closeSidebar);
   sidebarBackdropEl.addEventListener("click", closeSidebar);

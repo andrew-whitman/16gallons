@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>16gallons</title>
+    <script>
+      (function () {
+        const stored = localStorage.getItem("16gallons-theme");
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+        const theme =
+          stored === "dark" || stored === "light"
+            ? stored
+            : prefersDark
+              ? "dark"
+              : "light";
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -47,14 +62,25 @@
               <h1>16gallons</h1>
               <p class="subtitle">Merge volumes. Reach 16 gallons.</p>
             </div>
-            <div class="scores">
-              <div class="score-box">
-                <span class="score-label">Score</span>
-                <span id="score" class="score-value">0</span>
-              </div>
-              <div class="score-box">
-                <span class="score-label">Best</span>
-                <span id="best-score" class="score-value">0</span>
+            <div class="header-tools">
+              <button
+                id="theme-toggle"
+                class="theme-toggle"
+                type="button"
+                aria-label="Switch to dark theme"
+                aria-pressed="false"
+              >
+                <span class="theme-toggle-icon" aria-hidden="true"></span>
+              </button>
+              <div class="scores">
+                <div class="score-box">
+                  <span class="score-label">Score</span>
+                  <span id="score" class="score-value">0</span>
+                </div>
+                <div class="score-box">
+                  <span class="score-label">Best</span>
+                  <span id="best-score" class="score-value">0</span>
+                </div>
               </div>
             </div>
           </header>
