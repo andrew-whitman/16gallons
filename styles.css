@@ -5,25 +5,58 @@
 }
 
 :root {
-  --bg: #faf6ef;
-  --text: #4a4438;
-  --muted: #8a8275;
-  --board-bg: #bbada0;
-  --cell-bg: rgba(238, 228, 218, 0.35);
-  --button-bg: #8f7a66;
-  --button-hover: #9f8a76;
-  --overlay-bg: rgba(238, 228, 218, 0.75);
+  /* Ink & surfaces — cool neutrals anchored to the water theme */
+  --ink: #102a36;
+  --ink-muted: #355a68;
+  --surface: #e3f1f6;
+  --surface-raised: #f4fafc;
+  --surface-sidebar: #cfe4ec;
+
+  /* Primary action color — deep teal, 7:1+ with white text */
+  --primary: #124f63;
+  --primary-hover: #1a6478;
+  --on-primary: #f6fbfd;
+
+  /* Board frame — desaturated blue-gray, distinct from tile ramp */
+  --board-bg: #3f6673;
+  --cell-bg: rgba(255, 255, 255, 0.16);
+  --cell-border: rgba(255, 255, 255, 0.22);
+
+  /* Shared UI tokens */
+  --bg: var(--surface);
+  --text: var(--ink);
+  --muted: var(--ink-muted);
+  --button-bg: var(--primary);
+  --button-hover: var(--primary-hover);
+  --overlay-bg: rgba(228, 241, 246, 0.9);
   --sidebar-width: 280px;
-  --sidebar-bg: #f3ece2;
-  --sidebar-border: rgba(74, 68, 56, 0.12);
-  --shadow: 0 12px 32px rgba(74, 68, 56, 0.12);
+  --sidebar-bg: var(--surface-sidebar);
+  --sidebar-border: rgba(16, 42, 54, 0.14);
+  --shadow: 0 12px 32px rgba(16, 42, 54, 0.14);
+  --focus-ring: 0 0 0 3px var(--surface-raised), 0 0 0 5px var(--ink);
+
+  /* Water fill — slightly muted so tiles stay the focal point */
+  --water-shallow: rgba(88, 168, 198, 0.58);
+  --water-mid: rgba(46, 122, 154, 0.78);
+  --water-deep: rgba(22, 88, 118, 0.9);
+
+  /* Tile ramp — each step drops ~12% lightness; hue drifts cyan → teal → blue */
+  --tile-text-dark: var(--ink);
+  --tile-text-light: var(--on-primary);
+  --tile-edge-light: rgba(16, 42, 54, 0.16);
+  --tile-edge-dark: rgba(255, 255, 255, 0.18);
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   font-family: "Avenir Next", "Segoe UI", sans-serif;
-  background: var(--bg);
+  background: linear-gradient(
+    180deg,
+    var(--surface-raised) 0%,
+    var(--surface) 48%,
+    #d4e8ef 100%
+  );
   color: var(--text);
 }
 
@@ -78,14 +111,14 @@ body.sidebar-visible {
   height: 34px;
   padding: 0;
   border-radius: 8px;
-  background: rgba(143, 122, 102, 0.12);
+  background: rgba(18, 79, 99, 0.12);
   color: var(--text);
   font-size: 1.4rem;
   line-height: 1;
 }
 
 .sidebar-close:hover {
-  background: rgba(143, 122, 102, 0.2);
+  background: rgba(18, 79, 99, 0.2);
 }
 
 .sidebar-intro {
@@ -110,8 +143,8 @@ body.sidebar-visible {
   gap: 12px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(74, 68, 56, 0.06);
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(16, 42, 54, 0.1);
 }
 
 .conversion-swatch {
@@ -120,7 +153,7 @@ body.sidebar-visible {
   width: 38px;
   height: 38px;
   border-radius: 8px;
-  box-shadow: inset 0 0 0 1px rgba(74, 68, 56, 0.08);
+  box-shadow: inset 0 0 0 1px var(--tile-edge-light);
 }
 
 .conversion-content {
@@ -160,7 +193,7 @@ body.sidebar-visible {
 .sidebar-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(74, 68, 56, 0.35);
+  background: rgba(16, 42, 54, 0.45);
   z-index: 20;
 }
 
@@ -175,7 +208,7 @@ body.sidebar-visible {
   padding: 10px 14px;
   border-radius: 999px;
   background: var(--button-bg);
-  color: #fff;
+  color: var(--on-primary);
   box-shadow: var(--shadow);
 }
 
@@ -232,7 +265,7 @@ body.sidebar-visible {
   padding: 10px 14px;
   border-radius: 6px;
   background: var(--button-bg);
-  color: #fff;
+  color: var(--on-primary);
   text-align: center;
 }
 
@@ -241,7 +274,7 @@ body.sidebar-visible {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  opacity: 0.85;
+  color: rgba(246, 251, 253, 0.88);
 }
 
 .score-value {
@@ -264,7 +297,7 @@ button {
   border-radius: 6px;
   padding: 10px 16px;
   background: var(--button-bg);
-  color: #fff;
+  color: var(--on-primary);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -272,6 +305,13 @@ button {
 
 button:hover {
   background: var(--button-hover);
+}
+
+button:focus-visible,
+.sidebar-close:focus-visible,
+.sidebar-open:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .hint {
@@ -316,9 +356,9 @@ button:hover {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(96, 176, 232, 0.62) 0%,
-    rgba(52, 128, 196, 0.82) 55%,
-    rgba(38, 98, 168, 0.9) 100%
+    var(--water-shallow) 0%,
+    var(--water-mid) 55%,
+    var(--water-deep) 100%
   );
 }
 
@@ -327,6 +367,7 @@ button:hover {
   z-index: 0;
   border-radius: 6px;
   background: var(--cell-bg);
+  box-shadow: inset 0 0 0 1px var(--cell-border);
 }
 
 .tile {
@@ -339,6 +380,7 @@ button:hover {
   font-weight: 700;
   text-align: center;
   line-height: 1.15;
+  box-shadow: inset 0 0 0 1px var(--tile-edge-light);
   transition:
     top 120ms ease-in-out,
     left 120ms ease-in-out,
@@ -376,68 +418,68 @@ button:hover {
 }
 
 .tile--2 {
-  background: #eee4da;
-  color: #776e65;
+  background: #dff5fc;
+  color: #2d6278;
   font-size: clamp(0.95rem, 3.8vw, 1.2rem);
 }
 
 .tile--4 {
-  background: #ede0c8;
-  color: #776e65;
+  background: #c5ebf7;
+  color: #2d6278;
   font-size: clamp(0.95rem, 3.8vw, 1.2rem);
 }
 
 .tile--8 {
-  background: #f2b179;
-  color: #f9f6f2;
+  background: #9edcf0;
+  color: #1f4f63;
   font-size: clamp(0.9rem, 3.5vw, 1.1rem);
 }
 
 .tile--16 {
-  background: #f59563;
-  color: #f9f6f2;
+  background: #6fc8e6;
+  color: #f4fbff;
   font-size: clamp(0.88rem, 3.2vw, 1.05rem);
 }
 
 .tile--32 {
-  background: #f67c5f;
-  color: #f9f6f2;
+  background: #4eb3d8;
+  color: #f4fbff;
   font-size: clamp(0.85rem, 3vw, 1rem);
 }
 
 .tile--64 {
-  background: #f65e3b;
-  color: #f9f6f2;
+  background: #3a9cc4;
+  color: #f4fbff;
   font-size: clamp(0.82rem, 2.8vw, 0.98rem);
 }
 
 .tile--128 {
-  background: #edcf72;
-  color: #f9f6f2;
+  background: #2d88b0;
+  color: #f4fbff;
   font-size: clamp(0.8rem, 2.6vw, 0.95rem);
 }
 
 .tile--256 {
-  background: #edcc61;
-  color: #f9f6f2;
+  background: #247596;
+  color: #f4fbff;
   font-size: clamp(0.78rem, 2.4vw, 0.92rem);
 }
 
 .tile--512 {
-  background: #edc850;
-  color: #f9f6f2;
+  background: #1c647f;
+  color: #f4fbff;
   font-size: clamp(0.76rem, 2.2vw, 0.9rem);
 }
 
 .tile--1024 {
-  background: #edc53f;
-  color: #f9f6f2;
+  background: #155368;
+  color: #f4fbff;
   font-size: clamp(0.72rem, 2vw, 0.86rem);
 }
 
 .tile--2048 {
-  background: #edc22e;
-  color: #f9f6f2;
+  background: #0e4258;
+  color: #e8f6fc;
   font-size: clamp(0.7rem, 1.8vw, 0.84rem);
 }
 
@@ -445,8 +487,8 @@ button:hover {
 .tile--8192,
 .tile--16384,
 .tile--32768 {
-  background: #3c3a32;
-  color: #f9f6f2;
+  background: #082e3e;
+  color: #e8f6fc;
   font-size: clamp(0.68rem, 1.6vw, 0.8rem);
 }
 
