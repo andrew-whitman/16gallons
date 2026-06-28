@@ -33,6 +33,8 @@ const sidebarCloseBtn = document.getElementById("sidebar-close");
 const sidebarBackdropEl = document.getElementById("sidebar-backdrop");
 const conversionListEl = document.getElementById("conversion-list");
 
+let waterEl;
+
 let appEl;
 
 let grid = createEmptyGrid();
@@ -58,6 +60,14 @@ function createEmptyGrid() {
 
 function initBoardCells() {
   boardEl.innerHTML = "";
+
+  waterEl = document.createElement("div");
+  waterEl.id = "water";
+  waterEl.className = "water";
+  waterEl.setAttribute("aria-hidden", "true");
+  waterEl.innerHTML = `<div class="water__fill"></div>`;
+  boardEl.appendChild(waterEl);
+
   for (let i = 0; i < SIZE * SIZE; i += 1) {
     const cell = document.createElement("div");
     cell.className = "cell";
@@ -473,6 +483,21 @@ function volumeLabel(value) {
   return `${value} fl oz`;
 }
 
+function waterFillPercent(maxTile) {
+  if (maxTile < 2) return 0;
+
+  const minLog = Math.log2(2);
+  const maxLog = Math.log2(WIN_VALUE);
+  const tileLog = Math.log2(maxTile);
+
+  return Math.min(100, ((tileLog - minLog) / (maxLog - minLog)) * 100);
+}
+
+function updateWaterLevel() {
+  const maxTile = tiles.reduce((highest, tile) => Math.max(highest, tile.value), 0);
+  waterEl.style.setProperty("--water-height", `${waterFillPercent(maxTile)}%`);
+}
+
 function render() {
   const boardRect = boardEl.getBoundingClientRect();
   const gap = 12;
@@ -514,6 +539,8 @@ function render() {
     element.style.top = `${gap + tile.row * (cellSize + gap)}px`;
     element.style.left = `${gap + tile.col * (cellSize + gap)}px`;
   });
+
+  updateWaterLevel();
 }
 
 function showOverlay(message, actionLabel) {
