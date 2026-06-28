@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>16gallons</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <div class="title-group">
+          <h1>16gallons</h1>
+          <p class="subtitle">Merge volumes. Reach 16 gallons.</p>
+        </div>
+        <div class="scores">
+          <div class="score-box">
+            <span class="score-label">Score</span>
+            <span id="score" class="score-value">0</span>
+          </div>
+          <div class="score-box">
+            <span class="score-label">Best</span>
+            <span id="best-score" class="score-value">0</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="controls">
+        <button id="new-game" type="button">New Game</button>
+        <p class="hint">Use arrow keys or swipe to slide tiles.</p>
+      </div>
+
+      <div class="board-wrapper">
+        <div id="board" class="board" aria-label="Game board"></div>
+        <div id="overlay" class="overlay hidden" aria-hidden="true">
+          <div class="overlay-content">
+            <p id="overlay-message"></p>
+            <button id="overlay-action" type="button"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="game.js"></script>
+  </body>
+</html>
