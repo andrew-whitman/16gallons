@@ -1,0 +1,17 @@
+{
+  "name": "16gallons",
+  "short_name": "16gallons",
+  "description": "Merge kitchen volumes to reach 16 gallons.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#e3f1f6",
+  "theme_color": "#124f63",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -102,6 +102,18 @@ body.sidebar-visible {
   overflow: hidden;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .app {
   display: flex;
   min-height: 100vh;
@@ -360,7 +372,12 @@ body.sidebar-visible {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
+}
+
+.controls-actions {
+  display: flex;
+  gap: 10px;
 }
 
 button {
@@ -374,8 +391,13 @@ button {
   cursor: pointer;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   background: var(--button-hover);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 button:focus-visible,
@@ -395,6 +417,7 @@ button:focus-visible,
 
 .board-wrapper {
   position: relative;
+  margin-bottom: 0;
 }
 
 .board {
@@ -670,6 +693,14 @@ button:focus-visible,
   .controls {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .controls-actions {
+    justify-content: stretch;
+  }
+
+  .controls-actions button {
+    flex: 1;
   }
 
   .hint {

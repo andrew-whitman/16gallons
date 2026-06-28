@@ -9,7 +9,7 @@ const VOLUME_LABELS = {
   8: "8 tbsp",
   16: "1 pint",
   32: "1 quart",
-  64: "½ gallon",
+  64: "1/2 gallon",
   128: "1 gallon",
   256: "2 gallons",
   512: "4 gallons",
@@ -25,6 +25,7 @@ const boardEl = document.getElementById("board");
 const scoreEl = document.getElementById("score");
 const bestScoreEl = document.getElementById("best-score");
 const newGameBtn = document.getElementById("new-game");
+const undoBtn = document.getElementById("undo");
 const overlayEl = document.getElementById("overlay");
 const overlayMessageEl = document.getElementById("overlay-message");
 const overlayActionBtn = document.getElementById("overlay-action");
@@ -34,10 +35,12 @@ const sidebarCloseBtn = document.getElementById("sidebar-close");
 const sidebarBackdropEl = document.getElementById("sidebar-backdrop");
 const conversionListEl = document.getElementById("conversion-list");
 const themeToggleBtn = document.getElementById("theme-toggle");
+const statusAnnouncerEl = document.getElementById("status-announcer");
 
 let waterEl;
-
 let appEl;
+let undoState = null;
+let previousMaxTile = 0;
 
 let grid = createEmptyGrid();
 let tiles = [];
@@ -112,16 +115,32 @@ function startGame() {
   hasWon = false;
   keepPlaying = false;
   isGameOver = false;
+  undoState = null;
+  previousMaxTile = 0;
   hideOverlay();
   updateScore(0);
+  updateUndoButton();
   boardEl.querySelectorAll(".tile").forEach((tile) => tile.remove());
   spawnTile();
   spawnTile();
   render();
+  announce("New game started.");
+}
+
+function requestNewGame() {
+  if (score > 0 || hasWon || isGameOver) {
+    const confirmed = window.confirm(
+      "Start a new game? Your current progress will be lost.",
+    );
+    if (!confirmed) return;
+  }
+
+  startGame();
 }
 
 function bindEvents() {
-  newGameBtn.addEventListener("click", startGame);
+  newGameBtn.addEventListener("click", requestNewGame);
+  undoBtn.addEventListener("click", performUndo);
   overlayActionBtn.addEventListener("click", handleOverlayAction);
   themeToggleBtn.addEventListener("click", toggleTheme);
   sidebarOpenBtn.addEventListener("click", openSidebar);
@@ -185,6 +204,14 @@ function handleKeydown(event) {
     ArrowDown: "down",
     ArrowLeft: "left",
     ArrowRight: "right",
+    w: "up",
+    W: "up",
+    s: "down",
+    S: "down",
+    a: "left",
+    A: "left",
+    d: "right",
+    D: "right",
   };
 
   const direction = keyMap[event.key];
@@ -192,6 +219,56 @@ function handleKeydown(event) {
 
   event.preventDefault();
   move(direction);
+}
+
+function announce(message) {
+  statusAnnouncerEl.textContent = "";
+  requestAnimationFrame(() => {
+    statusAnnouncerEl.textContent = message;
+  });
+}
+
+function captureState() {
+  return {
+    grid: grid.map((row) =>
+      row.map((cell) => (cell ? { ...cell, mergedFrom: null } : null)),
+    ),
+    tiles: tiles.map((tile) => ({ ...tile, mergedFrom: null })),
+    score,
+    hasWon,
+    keepPlaying,
+    isGameOver,
+    previousMaxTile,
+  };
+}
+
+function restoreState(state) {
+  grid = state.grid.map((row) =>
+    row.map((cell) => (cell ? { ...cell } : null)),
+  );
+  tiles = state.tiles.map((tile) => ({ ...tile }));
+  score = state.score;
+  hasWon = state.hasWon;
+  keepPlaying = state.keepPlaying;
+  isGameOver = state.isGameOver;
+  previousMaxTile = state.previousMaxTile;
+  scoreEl.textContent = String(score);
+  hideOverlay();
+}
+
+function performUndo() {
+  if (!undoState) return;
+
+  const restored = undoState;
+  undoState = null;
+  restoreState(restored);
+  updateUndoButton();
+  render();
+  announce(`Move undone. Score ${score}.`);
+}
+
+function updateUndoButton() {
+  undoBtn.disabled = !undoState;
 }
 
 function renderConversionGuide() {
@@ -218,15 +295,15 @@ function renderConversionGuide() {
     arrow.setAttribute("aria-hidden", "true");
     arrow.textContent = "→";
 
-    const volumeLabel = document.createElement("span");
-    volumeLabel.className = "conversion-label";
-    volumeLabel.textContent = label;
+    const volumeLabelEl = document.createElement("span");
+    volumeLabelEl.className = "conversion-label";
+    volumeLabelEl.textContent = label;
 
     const flOz = document.createElement("span");
     flOz.className = "conversion-oz";
     flOz.textContent = formatFlOz(numericValue);
 
-    content.append(tileValue, arrow, volumeLabel, flOz);
+    content.append(tileValue, arrow, volumeLabelEl, flOz);
     item.append(swatch, content);
     conversionListEl.appendChild(item);
   });
@@ -309,11 +386,14 @@ function handleOverlayAction() {
   if (hasWon) {
     keepPlaying = true;
     hideOverlay();
+    announce("Continuing after reaching 16 gallons.");
   }
 }
 
 function move(direction) {
   if (isGameOver) return;
+
+  const snapshot = captureState();
 
   const vectors = {
     up: { row: -1, col: 0 },
@@ -325,6 +405,7 @@ function move(direction) {
   const vector = vectors[direction];
   const traversal = buildTraversal(vector);
   let moved = false;
+  let mergeMessage = null;
 
   tiles.forEach((tile) => {
     tile.mergedFrom = null;
@@ -359,6 +440,7 @@ function move(direction) {
       removeTile(nextTile);
       tiles.push(merged);
       updateScore(score + merged.value);
+      mergeMessage = `Merged to ${volumeLabel(merged.value)}. Score ${score}.`;
 
       if (merged.value === WIN_VALUE) {
         hasWon = true;
@@ -379,15 +461,34 @@ function move(direction) {
 
   if (!moved) return;
 
+  undoState = snapshot;
+  updateUndoButton();
+
   spawnTile();
   render();
+
+  if (mergeMessage) {
+    announce(mergeMessage);
+  }
+
+  const maxTile = getMaxTile();
+  if (maxTile > previousMaxTile) {
+    previousMaxTile = maxTile;
+    announce(`New highest volume: ${volumeLabel(maxTile)}.`);
+  }
 
   if (!canMove()) {
     isGameOver = true;
     showOverlay("Game over!", "Try Again");
+    announce(`Game over. Final score ${score}.`);
   } else if (hasWon && !keepPlaying) {
     showOverlay("You reached 16 gallons!", "Keep Going");
+    announce("You reached 16 gallons!");
   }
+}
+
+function getMaxTile() {
+  return tiles.reduce((highest, tile) => Math.max(highest, tile.value), 0);
 }
 
 function buildTraversal(vector) {
@@ -491,13 +592,15 @@ function removeTile(tile) {
 }
 
 function updateScore(nextScore) {
+  const beatBest = nextScore > bestScore;
   score = nextScore;
   scoreEl.textContent = String(score);
 
-  if (score > bestScore) {
-    bestScore = score;
+  if (beatBest) {
+    bestScore = nextScore;
     bestScoreEl.textContent = String(bestScore);
     localStorage.setItem(BEST_SCORE_KEY, String(bestScore));
+    announce(`New best score: ${bestScore}.`);
   }
 }
 
@@ -525,7 +628,7 @@ function waterFillPercent(maxTile) {
 }
 
 function updateWaterLevel() {
-  const maxTile = tiles.reduce((highest, tile) => Math.max(highest, tile.value), 0);
+  const maxTile = getMaxTile();
   waterEl.style.setProperty("--water-height", `${waterFillPercent(maxTile)}%`);
 }
 
@@ -587,3 +690,9 @@ function hideOverlay() {
 }
 
 window.addEventListener("resize", render);
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}

@@ -3,7 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Merge kitchen volumes in this 2048-style puzzle game. Reach 16 gallons to win."
+    />
+    <meta name="theme-color" content="#124f63" />
+    <meta property="og:title" content="16gallons" />
+    <meta
+      property="og:description"
+      content="Merge kitchen volumes in this 2048-style puzzle game. Reach 16 gallons to win."
+    />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://andrew-whitman.github.io/16gallons/"
+    />
+    <meta
+      property="og:image"
+      content="https://andrew-whitman.github.io/16gallons/favicon.svg"
+    />
     <title>16gallons</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="favicon.svg" />
+    <link rel="manifest" href="manifest.json" />
     <script>
       (function () {
         const stored = localStorage.getItem("16gallons-theme");
@@ -22,6 +44,8 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div id="status-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+
     <div class="app">
       <aside id="sidebar" class="sidebar" aria-label="Volume conversion guide">
         <div class="sidebar-header">
@@ -86,8 +110,11 @@
           </header>
 
           <div class="controls">
-            <button id="new-game" type="button">New Game</button>
-            <p class="hint">Use arrow keys or swipe to slide tiles.</p>
+            <div class="controls-actions">
+              <button id="new-game" type="button">New Game</button>
+              <button id="undo" type="button" disabled>Undo</button>
+            </div>
+            <p class="hint">Arrow keys, WASD, or swipe to move.</p>
           </div>
 
           <div class="board-wrapper">
