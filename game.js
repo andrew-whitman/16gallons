@@ -40,6 +40,7 @@ let tiles = [];
 let score = 0;
 let bestScore = Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
 let hasWon = false;
+let keepPlaying = false;
 let isGameOver = false;
 let touchStart = null;
 
@@ -69,6 +70,7 @@ function startGame() {
   tiles = [];
   score = 0;
   hasWon = false;
+  keepPlaying = false;
   isGameOver = false;
   hideOverlay();
   updateScore(0);
@@ -264,6 +266,7 @@ function handleOverlayAction() {
   }
 
   if (hasWon) {
+    keepPlaying = true;
     hideOverlay();
   }
 }
@@ -341,7 +344,7 @@ function move(direction) {
   if (!canMove()) {
     isGameOver = true;
     showOverlay("Game over!", "Try Again");
-  } else if (hasWon) {
+  } else if (hasWon && !keepPlaying) {
     showOverlay("You reached 16 gallons!", "Keep Going");
   }
 }
