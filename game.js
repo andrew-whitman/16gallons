@@ -3,6 +3,11 @@ const WIN_VALUE = 2048;
 const BEST_SCORE_KEY = "16gallons-best-score";
 const THEME_KEY = "16gallons-theme";
 
+function trackEvent(name, properties = {}) {
+  if (typeof posthog === "undefined") return;
+  posthog.capture(name, properties);
+}
+
 const VOLUME_LABELS = {
   1: "1 fl oz",
   2: "4 tbsp",
@@ -58,7 +63,7 @@ initTheme();
 initBoardCells();
 renderConversionGuide();
 initSidebar();
-startGame();
+startGame("initial");
 bindEvents();
 
 function createEmptyGrid() {
@@ -77,6 +82,7 @@ function setTheme(theme) {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem(THEME_KEY, theme);
   updateThemeToggle(theme);
+  trackEvent("theme_changed", { theme });
 }
 
 function toggleTheme() {
@@ -109,7 +115,7 @@ function initBoardCells() {
   }
 }
 
-function startGame() {
+function startGame(source = "unknown") {
   grid = createEmptyGrid();
   tiles = [];
   score = 0;
@@ -125,6 +131,7 @@ function startGame() {
   spawnTile();
   spawnTile();
   render();
+  trackEvent("game_started", { source });
   announce("New game started.");
 }
 
@@ -136,7 +143,7 @@ function requestNewGame() {
     if (!confirmed) return;
   }
 
-  startGame();
+  startGame("new_game");
 }
 
 function bindEvents() {
@@ -265,6 +272,7 @@ function performUndo() {
   restoreState(restored);
   updateUndoButton();
   render();
+  trackEvent("undo_used", { score });
   announce(`Move undone. Score ${score}.`);
 }
 
@@ -364,11 +372,12 @@ function isDesktopSidebar() {
 
 function handleOverlayAction() {
   if (isGameOver) {
-    startGame();
+    startGame("retry");
     return;
   }
 
   if (hasWon) {
+    trackEvent("keep_playing", { score });
     keepPlaying = true;
     hideOverlay();
     announce("Continuing after reaching 16 gallons.");
@@ -429,6 +438,7 @@ function move(direction) {
 
       if (merged.value === WIN_VALUE) {
         hasWon = true;
+        trackEvent("game_won", { score });
       }
 
       moved = true;
@@ -464,6 +474,7 @@ function move(direction) {
 
   if (!canMove()) {
     isGameOver = true;
+    trackEvent("game_over", { score, max_tile: getMaxTile() });
     showOverlay("Game over!", "Try Again");
     announce(`Game over. Final score ${score}.`);
   } else if (hasWon && !keepPlaying) {
@@ -582,9 +593,14 @@ function updateScore(nextScore) {
   scoreEl.textContent = String(score);
 
   if (beatBest) {
+    const previousBest = bestScore;
     bestScore = nextScore;
     bestScoreEl.textContent = String(bestScore);
     localStorage.setItem(BEST_SCORE_KEY, String(bestScore));
+    trackEvent("best_score_updated", {
+      score: nextScore,
+      previous_best: previousBest,
+    });
     announce(`New best score: ${bestScore}.`);
   }
 }
