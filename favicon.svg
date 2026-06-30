@@ -5,17 +5,4 @@
     fill="#dff5fc"
     opacity="0.95"
   />
-  <text
-    x="32"
-    y="39"
-    text-anchor="middle"
-    dominant-baseline="middle"
-    font-family="Segoe UI, sans-serif"
-    font-size="22"
-    font-weight="800"
-    letter-spacing="-0.5"
-    fill="#124f63"
-  >
-    16
-  </text>
 </svg>
