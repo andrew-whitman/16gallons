@@ -64,6 +64,11 @@ let hasWon = false;
 let keepPlaying = false;
 let isGameOver = false;
 let touchStart = null;
+let touchLocked = false;
+let boardMetrics = null;
+
+const SWIPE_THRESHOLD = 16;
+const BOARD_GAP = 12;
 
 bestScoreEl.textContent = String(bestScore);
 
@@ -168,6 +173,7 @@ function setDifficulty(nextDifficulty) {
 function initBoardCells() {
   boardEl.innerHTML = "";
   boardEl.style.setProperty("--board-size", String(boardSize));
+  invalidateBoardMetrics();
 
   waterEl = document.createElement("div");
   waterEl.id = "water";
@@ -234,43 +240,87 @@ function bindEvents() {
   sidebarBackdropEl.addEventListener("click", closeSidebar);
   window.addEventListener("keydown", handleKeydown, { passive: false });
 
-  boardEl.addEventListener(
-    "touchstart",
-    (event) => {
-      if (event.touches.length !== 1) return;
-      touchStart = {
-        x: event.touches[0].clientX,
-        y: event.touches[0].clientY,
-      };
-    },
-    { passive: true },
-  );
+  boardEl.addEventListener("touchstart", handleTouchStart, { passive: true });
+  boardEl.addEventListener("touchmove", handleTouchMove, { passive: false });
+  boardEl.addEventListener("touchend", handleTouchEnd, { passive: true });
+  boardEl.addEventListener("touchcancel", handleTouchCancel, { passive: true });
 
-  boardEl.addEventListener(
-    "touchend",
-    (event) => {
-      if (!touchStart || event.changedTouches.length !== 1) return;
-      const touch = event.changedTouches[0];
-      const dx = touch.clientX - touchStart.x;
-      const dy = touch.clientY - touchStart.y;
-      const absX = Math.abs(dx);
-      const absY = Math.abs(dy);
+  if (typeof ResizeObserver !== "undefined") {
+    const boardObserver = new ResizeObserver(() => {
+      invalidateBoardMetrics();
+      render();
+    });
+    boardObserver.observe(boardEl);
+  } else {
+    window.addEventListener("resize", () => {
+      invalidateBoardMetrics();
+      render();
+    });
+  }
+}
 
-      if (Math.max(absX, absY) < 24) {
-        touchStart = null;
-        return;
-      }
+function handleTouchStart(event) {
+  if (event.touches.length !== 1) return;
+  touchLocked = false;
+  touchStart = {
+    x: event.touches[0].clientX,
+    y: event.touches[0].clientY,
+  };
+}
 
-      if (absX > absY) {
-        move(dx > 0 ? "right" : "left");
-      } else {
-        move(dy > 0 ? "down" : "up");
-      }
+function handleTouchMove(event) {
+  if (!touchStart || touchLocked || event.touches.length !== 1) return;
 
-      touchStart = null;
-    },
-    { passive: true },
-  );
+  const touch = event.touches[0];
+  const dx = touch.clientX - touchStart.x;
+  const dy = touch.clientY - touchStart.y;
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+
+  if (Math.max(absX, absY) < SWIPE_THRESHOLD) return;
+
+  event.preventDefault();
+  touchLocked = true;
+  touchStart = null;
+  performSwipe(dx, dy);
+}
+
+function handleTouchEnd(event) {
+  if (touchLocked) {
+    touchLocked = false;
+    touchStart = null;
+    return;
+  }
+
+  if (!touchStart || event.changedTouches.length !== 1) {
+    touchStart = null;
+    return;
+  }
+
+  const touch = event.changedTouches[0];
+  const dx = touch.clientX - touchStart.x;
+  const dy = touch.clientY - touchStart.y;
+  touchStart = null;
+
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_THRESHOLD) return;
+
+  performSwipe(dx, dy);
+}
+
+function handleTouchCancel() {
+  touchStart = null;
+  touchLocked = false;
+}
+
+function performSwipe(dx, dy) {
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+
+  if (absX > absY) {
+    move(dx > 0 ? "right" : "left");
+  } else {
+    move(dy > 0 ? "down" : "up");
+  }
 }
 
 function handleKeydown(event) {
@@ -711,6 +761,26 @@ function waterFillPercent(maxTile) {
   return Math.min(100, ((tileLog - minLog) / (maxLog - minLog)) * 100);
 }
 
+function invalidateBoardMetrics() {
+  boardMetrics = null;
+}
+
+function measureBoard() {
+  const width = boardEl.clientWidth;
+  const cellSize = (width - BOARD_GAP * (boardSize + 1)) / boardSize;
+  boardMetrics = {
+    gap: BOARD_GAP,
+    cellSize,
+    stride: cellSize + BOARD_GAP,
+  };
+}
+
+function ensureBoardMetrics() {
+  if (!boardMetrics) {
+    measureBoard();
+  }
+}
+
 function updateWaterLevel() {
   const maxTile = getMaxTile();
   waterEl.style.setProperty("--water-height", `${waterFillPercent(maxTile)}%`);
@@ -737,9 +807,8 @@ function updateTileContent(element, value) {
 }
 
 function render() {
-  const boardRect = boardEl.getBoundingClientRect();
-  const gap = 12;
-  const cellSize = (boardRect.width - gap * (boardSize + 1)) / boardSize;
+  ensureBoardMetrics();
+  const { gap, cellSize, stride } = boardMetrics;
 
   const tileElements = new Map(
     [...boardEl.querySelectorAll(".tile")].map((element) => [
@@ -766,16 +835,22 @@ function render() {
       boardEl.appendChild(element);
     }
 
+    const valueKey = String(tile.value);
     element.className = `tile tile--${tile.value}`;
-    updateTileContent(element, tile.value);
+    if (element.dataset.value !== valueKey) {
+      element.dataset.value = valueKey;
+      updateTileContent(element, tile.value);
+    }
 
-    if (tile.isNew) element.classList.add("tile--new");
-    if (tile.mergedFrom) element.classList.add("tile--merged");
+    element.classList.toggle("tile--new", Boolean(tile.isNew));
+    element.classList.toggle("tile--merged", Boolean(tile.mergedFrom));
+
+    const x = gap + tile.col * stride;
+    const y = gap + tile.row * stride;
 
     element.style.width = `${cellSize}px`;
     element.style.height = `${cellSize}px`;
-    element.style.top = `${gap + tile.row * (cellSize + gap)}px`;
-    element.style.left = `${gap + tile.col * (cellSize + gap)}px`;
+    element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
   });
 
   updateWaterLevel();
@@ -792,8 +867,6 @@ function hideOverlay() {
   overlayEl.classList.add("hidden");
   overlayEl.setAttribute("aria-hidden", "true");
 }
-
-window.addEventListener("resize", render);
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
