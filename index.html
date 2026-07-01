@@ -197,9 +197,35 @@
           </header>
 
           <div class="controls">
-            <div class="controls-actions">
-              <button id="new-game" type="button">New Game</button>
-              <button id="undo" type="button" disabled>Undo</button>
+            <div class="controls-primary">
+              <div
+                class="difficulty-toggle"
+                role="radiogroup"
+                aria-label="Board difficulty"
+              >
+                <button
+                  id="difficulty-normal"
+                  type="button"
+                  role="radio"
+                  aria-checked="true"
+                  aria-label="Normal, 4 by 4 board"
+                >
+                  Normal
+                </button>
+                <button
+                  id="difficulty-easy"
+                  type="button"
+                  role="radio"
+                  aria-checked="false"
+                  aria-label="Easy, 5 by 5 board"
+                >
+                  Easy
+                </button>
+              </div>
+              <div class="controls-actions">
+                <button id="new-game" type="button">New Game</button>
+                <button id="undo" type="button" disabled>Undo</button>
+              </div>
             </div>
             <p class="hint">Arrow keys, WASD, or swipe to move.</p>
           </div>

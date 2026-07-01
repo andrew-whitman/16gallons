@@ -1,7 +1,11 @@
-const SIZE = 4;
 const WIN_VALUE = 2048;
 const BEST_SCORE_KEY = "16gallons-best-score";
 const THEME_KEY = "16gallons-theme";
+const DIFFICULTY_KEY = "16gallons-difficulty";
+const DIFFICULTY_SIZES = {
+  normal: 4,
+  easy: 5,
+};
 
 function trackEvent(name, properties = {}) {
   if (typeof posthog === "undefined") return;
@@ -41,17 +45,21 @@ const sidebarCloseBtn = document.getElementById("sidebar-close");
 const sidebarBackdropEl = document.getElementById("sidebar-backdrop");
 const conversionListEl = document.getElementById("conversion-list");
 const themeToggleBtn = document.getElementById("theme-toggle");
+const difficultyNormalBtn = document.getElementById("difficulty-normal");
+const difficultyEasyBtn = document.getElementById("difficulty-easy");
 const statusAnnouncerEl = document.getElementById("status-announcer");
 
 let waterEl;
 let appEl;
 let undoState = null;
 let previousMaxTile = 0;
+let difficulty = loadDifficulty();
+let boardSize = DIFFICULTY_SIZES[difficulty];
 
 let grid = createEmptyGrid();
 let tiles = [];
 let score = 0;
-let bestScore = Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
+let bestScore = 0;
 let hasWon = false;
 let keepPlaying = false;
 let isGameOver = false;
@@ -60,14 +68,40 @@ let touchStart = null;
 bestScoreEl.textContent = String(bestScore);
 
 initTheme();
+loadBestScore();
 initBoardCells();
+updateDifficultyToggle();
 renderConversionGuide();
 initSidebar();
 startGame("initial");
 bindEvents();
 
+function loadDifficulty() {
+  const stored = localStorage.getItem(DIFFICULTY_KEY);
+  return stored === "easy" ? "easy" : "normal";
+}
+
+function bestScoreStorageKey() {
+  return `${BEST_SCORE_KEY}-${difficulty}`;
+}
+
+function loadBestScore() {
+  let storedScore = Number(localStorage.getItem(bestScoreStorageKey())) || 0;
+
+  if (!storedScore && difficulty === "normal") {
+    const legacyScore = Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
+    if (legacyScore) {
+      storedScore = legacyScore;
+      localStorage.setItem(bestScoreStorageKey(), String(legacyScore));
+    }
+  }
+
+  bestScore = storedScore;
+  bestScoreEl.textContent = String(bestScore);
+}
+
 function createEmptyGrid() {
-  return Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+  return Array.from({ length: boardSize }, () => Array(boardSize).fill(null));
 }
 
 function initTheme() {
@@ -98,8 +132,42 @@ function updateThemeToggle(theme) {
   );
 }
 
+function updateDifficultyToggle() {
+  const isEasy = difficulty === "easy";
+  difficultyNormalBtn.setAttribute("aria-checked", String(!isEasy));
+  difficultyEasyBtn.setAttribute("aria-checked", String(isEasy));
+}
+
+function requestDifficultyChange(nextDifficulty) {
+  if (nextDifficulty === difficulty) return;
+
+  if (score > 0 || hasWon || isGameOver) {
+    const confirmed = window.confirm(
+      "Switch board size? Your current progress will be lost.",
+    );
+    if (!confirmed) return;
+  }
+
+  setDifficulty(nextDifficulty);
+}
+
+function setDifficulty(nextDifficulty) {
+  difficulty = nextDifficulty;
+  boardSize = DIFFICULTY_SIZES[difficulty];
+  localStorage.setItem(DIFFICULTY_KEY, difficulty);
+  updateDifficultyToggle();
+  loadBestScore();
+  initBoardCells();
+  startGame("difficulty_change");
+  trackEvent("difficulty_changed", {
+    difficulty,
+    board_size: boardSize,
+  });
+}
+
 function initBoardCells() {
   boardEl.innerHTML = "";
+  boardEl.style.setProperty("--board-size", String(boardSize));
 
   waterEl = document.createElement("div");
   waterEl.id = "water";
@@ -108,7 +176,7 @@ function initBoardCells() {
   waterEl.innerHTML = `<div class="water__fill"></div>`;
   boardEl.appendChild(waterEl);
 
-  for (let i = 0; i < SIZE * SIZE; i += 1) {
+  for (let i = 0; i < boardSize * boardSize; i += 1) {
     const cell = document.createElement("div");
     cell.className = "cell";
     boardEl.appendChild(cell);
@@ -131,7 +199,11 @@ function startGame(source = "unknown") {
   spawnTile();
   spawnTile();
   render();
-  trackEvent("game_started", { source });
+  trackEvent("game_started", {
+    source,
+    difficulty,
+    board_size: boardSize,
+  });
   announce("New game started.");
 }
 
@@ -151,6 +223,12 @@ function bindEvents() {
   undoBtn.addEventListener("click", performUndo);
   overlayActionBtn.addEventListener("click", handleOverlayAction);
   themeToggleBtn.addEventListener("click", toggleTheme);
+  difficultyNormalBtn.addEventListener("click", () =>
+    requestDifficultyChange("normal"),
+  );
+  difficultyEasyBtn.addEventListener("click", () =>
+    requestDifficultyChange("easy"),
+  );
   sidebarOpenBtn.addEventListener("click", openSidebar);
   sidebarCloseBtn.addEventListener("click", closeSidebar);
   sidebarBackdropEl.addEventListener("click", closeSidebar);
@@ -474,7 +552,12 @@ function move(direction) {
 
   if (!canMove()) {
     isGameOver = true;
-    trackEvent("game_over", { score, max_tile: getMaxTile() });
+    trackEvent("game_over", {
+      score,
+      max_tile: getMaxTile(),
+      difficulty,
+      board_size: boardSize,
+    });
     showOverlay("Game over!", "Try Again");
     announce(`Game over. Final score ${score}.`);
   } else if (hasWon && !keepPlaying) {
@@ -491,7 +574,7 @@ function buildTraversal(vector) {
   const rows = [];
   const cols = [];
 
-  for (let i = 0; i < SIZE; i += 1) {
+  for (let i = 0; i < boardSize; i += 1) {
     rows.push(i);
     cols.push(i);
   }
@@ -528,14 +611,14 @@ function findFarthestPosition(row, col, vector) {
 }
 
 function isWithinBounds({ row, col }) {
-  return row >= 0 && row < SIZE && col >= 0 && col < SIZE;
+  return row >= 0 && row < boardSize && col >= 0 && col < boardSize;
 }
 
 function spawnTile() {
   const emptyCells = [];
 
-  for (let row = 0; row < SIZE; row += 1) {
-    for (let col = 0; col < SIZE; col += 1) {
+  for (let row = 0; row < boardSize; row += 1) {
+    for (let col = 0; col < boardSize; col += 1) {
       if (!grid[row][col]) {
         emptyCells.push({ row, col });
       }
@@ -560,8 +643,8 @@ function spawnTile() {
 }
 
 function canMove() {
-  for (let row = 0; row < SIZE; row += 1) {
-    for (let col = 0; col < SIZE; col += 1) {
+  for (let row = 0; row < boardSize; row += 1) {
+    for (let col = 0; col < boardSize; col += 1) {
       const tile = grid[row][col];
       if (!tile) return true;
 
@@ -596,7 +679,7 @@ function updateScore(nextScore) {
     const previousBest = bestScore;
     bestScore = nextScore;
     bestScoreEl.textContent = String(bestScore);
-    localStorage.setItem(BEST_SCORE_KEY, String(bestScore));
+    localStorage.setItem(bestScoreStorageKey(), String(bestScore));
     trackEvent("best_score_updated", {
       score: nextScore,
       previous_best: previousBest,
@@ -656,7 +739,7 @@ function updateTileContent(element, value) {
 function render() {
   const boardRect = boardEl.getBoundingClientRect();
   const gap = 12;
-  const cellSize = (boardRect.width - gap * (SIZE + 1)) / SIZE;
+  const cellSize = (boardRect.width - gap * (boardSize + 1)) / boardSize;
 
   const tileElements = new Map(
     [...boardEl.querySelectorAll(".tile")].map((element) => [

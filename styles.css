@@ -376,6 +376,43 @@ body.sidebar-visible {
   margin-bottom: 10px;
 }
 
+.controls-primary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.difficulty-toggle {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--surface-raised);
+  border: 1px solid var(--sidebar-border);
+  gap: 2px;
+}
+
+.difficulty-toggle button {
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.difficulty-toggle button:hover:not([aria-checked="true"]) {
+  color: var(--text);
+}
+
+.difficulty-toggle button[aria-checked="true"] {
+  background: var(--button-bg);
+  color: var(--on-primary);
+}
+
+.difficulty-toggle button[aria-checked="true"]:hover {
+  background: var(--button-hover);
+}
+
 .controls-actions {
   display: flex;
   gap: 10px;
@@ -404,7 +441,8 @@ button:disabled {
 button:focus-visible,
 .sidebar-close:focus-visible,
 .sidebar-open:focus-visible,
-.theme-toggle:focus-visible {
+.theme-toggle:focus-visible,
+.difficulty-toggle button:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
 }
@@ -424,7 +462,7 @@ button:focus-visible,
 .board {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--board-size, 4), 1fr);
   gap: 12px;
   padding: 12px;
   border-radius: 10px;
@@ -473,7 +511,7 @@ button:focus-visible,
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 6px 8px;
+  padding: clamp(4px, 1.2vw, 6px) clamp(5px, 1.5vw, 8px);
   border-radius: 6px;
   font-weight: 700;
   text-align: center;
@@ -723,6 +761,11 @@ button:focus-visible,
 
   .controls-actions button {
     flex: 1;
+  }
+
+  .controls-primary {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .hint {
