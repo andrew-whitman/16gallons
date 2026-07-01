@@ -3,13 +3,41 @@ const BEST_SCORE_KEY = "16gallons-best-score";
 const THEME_KEY = "16gallons-theme";
 const DIFFICULTY_KEY = "16gallons-difficulty";
 const DIFFICULTY_SIZES = {
-  normal: 4,
+  hard: 4,
   easy: 5,
 };
 
 function trackEvent(name, properties = {}) {
   if (typeof posthog === "undefined") return;
   posthog.capture(name, properties);
+}
+
+function gameEventProperties(extra = {}) {
+  return {
+    difficulty,
+    board_size: boardSize,
+    ...extra,
+  };
+}
+
+function trackGameEvent(name, properties = {}) {
+  trackEvent(name, gameEventProperties(properties));
+}
+
+function syncAnalyticsContext() {
+  if (typeof posthog === "undefined") return;
+
+  const context = {
+    difficulty,
+    board_size: boardSize,
+  };
+
+  posthog.register(context);
+  posthog.register_for_session(context);
+  posthog.setPersonProperties({
+    last_difficulty: difficulty,
+    last_board_size: boardSize,
+  });
 }
 
 const VOLUME_LABELS = {
@@ -45,7 +73,7 @@ const sidebarCloseBtn = document.getElementById("sidebar-close");
 const sidebarBackdropEl = document.getElementById("sidebar-backdrop");
 const conversionListEl = document.getElementById("conversion-list");
 const themeToggleBtn = document.getElementById("theme-toggle");
-const difficultyNormalBtn = document.getElementById("difficulty-normal");
+const difficultyHardBtn = document.getElementById("difficulty-hard");
 const difficultyEasyBtn = document.getElementById("difficulty-easy");
 const statusAnnouncerEl = document.getElementById("status-announcer");
 
@@ -74,6 +102,7 @@ bestScoreEl.textContent = String(bestScore);
 
 initTheme();
 loadBestScore();
+syncAnalyticsContext();
 initBoardCells();
 updateDifficultyToggle();
 renderConversionGuide();
@@ -83,7 +112,30 @@ bindEvents();
 
 function loadDifficulty() {
   const stored = localStorage.getItem(DIFFICULTY_KEY);
-  return stored === "easy" ? "easy" : "normal";
+
+  if (stored === "easy") {
+    return "easy";
+  }
+
+  if (stored === "normal") {
+    localStorage.setItem(DIFFICULTY_KEY, "hard");
+    return "hard";
+  }
+
+  return "hard";
+}
+
+function migrateBestScoreKey(fromDifficulty, toDifficulty) {
+  const fromKey = `${BEST_SCORE_KEY}-${fromDifficulty}`;
+  const toKey = `${BEST_SCORE_KEY}-${toDifficulty}`;
+  const fromScore = Number(localStorage.getItem(fromKey)) || 0;
+  const toScore = Number(localStorage.getItem(toKey)) || 0;
+
+  if (fromScore > toScore) {
+    localStorage.setItem(toKey, String(fromScore));
+  }
+
+  localStorage.removeItem(fromKey);
 }
 
 function bestScoreStorageKey() {
@@ -91,9 +143,11 @@ function bestScoreStorageKey() {
 }
 
 function loadBestScore() {
+  migrateBestScoreKey("normal", "hard");
+
   let storedScore = Number(localStorage.getItem(bestScoreStorageKey())) || 0;
 
-  if (!storedScore && difficulty === "normal") {
+  if (!storedScore && difficulty === "hard") {
     const legacyScore = Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
     if (legacyScore) {
       storedScore = legacyScore;
@@ -139,7 +193,7 @@ function updateThemeToggle(theme) {
 
 function updateDifficultyToggle() {
   const isEasy = difficulty === "easy";
-  difficultyNormalBtn.setAttribute("aria-checked", String(!isEasy));
+  difficultyHardBtn.setAttribute("aria-checked", String(!isEasy));
   difficultyEasyBtn.setAttribute("aria-checked", String(isEasy));
 }
 
@@ -161,13 +215,11 @@ function setDifficulty(nextDifficulty) {
   boardSize = DIFFICULTY_SIZES[difficulty];
   localStorage.setItem(DIFFICULTY_KEY, difficulty);
   updateDifficultyToggle();
+  syncAnalyticsContext();
   loadBestScore();
   initBoardCells();
+  trackGameEvent("difficulty_changed");
   startGame("difficulty_change");
-  trackEvent("difficulty_changed", {
-    difficulty,
-    board_size: boardSize,
-  });
 }
 
 function initBoardCells() {
@@ -205,11 +257,7 @@ function startGame(source = "unknown") {
   spawnTile();
   spawnTile();
   render();
-  trackEvent("game_started", {
-    source,
-    difficulty,
-    board_size: boardSize,
-  });
+  trackGameEvent("game_started", { source });
   announce("New game started.");
 }
 
@@ -229,8 +277,8 @@ function bindEvents() {
   undoBtn.addEventListener("click", performUndo);
   overlayActionBtn.addEventListener("click", handleOverlayAction);
   themeToggleBtn.addEventListener("click", toggleTheme);
-  difficultyNormalBtn.addEventListener("click", () =>
-    requestDifficultyChange("normal"),
+  difficultyHardBtn.addEventListener("click", () =>
+    requestDifficultyChange("hard"),
   );
   difficultyEasyBtn.addEventListener("click", () =>
     requestDifficultyChange("easy"),
@@ -400,7 +448,7 @@ function performUndo() {
   restoreState(restored);
   updateUndoButton();
   render();
-  trackEvent("undo_used", { score });
+  trackGameEvent("undo_used", { score });
   announce(`Move undone. Score ${score}.`);
 }
 
@@ -505,7 +553,7 @@ function handleOverlayAction() {
   }
 
   if (hasWon) {
-    trackEvent("keep_playing", { score });
+    trackGameEvent("keep_playing", { score });
     keepPlaying = true;
     hideOverlay();
     announce("Continuing after reaching 16 gallons.");
@@ -566,7 +614,7 @@ function move(direction) {
 
       if (merged.value === WIN_VALUE) {
         hasWon = true;
-        trackEvent("game_won", { score });
+        trackGameEvent("game_won", { score });
       }
 
       moved = true;
@@ -602,11 +650,9 @@ function move(direction) {
 
   if (!canMove()) {
     isGameOver = true;
-    trackEvent("game_over", {
+    trackGameEvent("game_over", {
       score,
       max_tile: getMaxTile(),
-      difficulty,
-      board_size: boardSize,
     });
     showOverlay("Game over!", "Try Again");
     announce(`Game over. Final score ${score}.`);
@@ -730,7 +776,7 @@ function updateScore(nextScore) {
     bestScore = nextScore;
     bestScoreEl.textContent = String(bestScore);
     localStorage.setItem(bestScoreStorageKey(), String(bestScore));
-    trackEvent("best_score_updated", {
+    trackGameEvent("best_score_updated", {
       score: nextScore,
       previous_best: previousBest,
     });
